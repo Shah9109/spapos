@@ -662,3 +662,12 @@ model LoginHistory {
 
   @@map("login_history")
 }
+
+model UserState {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  email     String   @unique
+  stateJson String
+  updatedAt DateTime @updatedAt
+
+  @@map("user_states")
+}

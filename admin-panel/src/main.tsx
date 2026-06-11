@@ -27,6 +27,7 @@ import { SuperAdminMarketing } from './pages/SuperAdminMarketing';
 import { PlanGate } from './components/PlanGate';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { Marketing } from './pages/Marketing';
+import { StateSynchronizer } from './components/StateSynchronizer';
 import './index.css';
 
 const queryClient = new QueryClient();
@@ -34,6 +35,7 @@ const queryClient = new QueryClient();
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
+      <StateSynchronizer />
       <HashRouter>
         <Routes>
           {/* Public Routes */}
