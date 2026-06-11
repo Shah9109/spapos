@@ -25,6 +25,7 @@ Add the following key-value pairs in the **Environment Variables** section:
 | Key | Value | Description |
 | :--- | :--- | :--- |
 | `VITE_GOOGLE_CLIENT_ID` | `500088214386-eokjlr3c0nufvb0o0i32i9qll92qpt94.apps.googleusercontent.com` | Google OAuth Client ID |
+| `VITE_API_URL` | `https://[your-render-app-url].onrender.com/api/v1` | URL pointing to your Render backend API |
 
 ### 4. Deploy
 - Click **Deploy**. Vercel will build the React application and output your production domain (e.g., `https://spapos-admin.vercel.app`).
