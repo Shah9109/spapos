@@ -11,7 +11,7 @@ export const StateSynchronizer = () => {
   const currentUser = users.find((u) => u.id === currentUserId);
   const userEmail = currentUser?.email;
 
-  const isSyncingRef = useRef(false);
+  const isSyncingRef = useRef(true);
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastPulledStateRef = useRef<string>('');
 

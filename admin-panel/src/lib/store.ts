@@ -1271,7 +1271,17 @@ export const useAppStore = create<AppState>()(
           email: result.success ? email : undefined,
         };
       },
-      logout: () => set({ session: {} }),
+      logout: () => {
+        set({
+          ...initialState,
+          session: {},
+        });
+        try {
+          localStorage.removeItem('spapos-store');
+        } catch (e) {
+          console.error(e);
+        }
+      },
       createSpa: ({ name, email, phone, subdomain, address, ownerName, ownerEmail, ownerPhone, planId }) => {
         const state = get();
         const parts = ownerName.trim().split(/\s+/);
