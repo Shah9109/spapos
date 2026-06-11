@@ -276,7 +276,17 @@ export const SpaOwnerLayout = () => {
             </div>
           )}
 
-          <div className="flex-1 overflow-auto p-8">
+          <div className="flex-1 overflow-auto p-8 font-medium">
+            {window.location.hostname !== 'localhost' && 
+             window.location.hostname !== '127.0.0.1' && 
+             (import.meta.env.VITE_API_URL || 'http://localhost:5002/api/v1').includes('localhost') && (
+              <div className="bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-xl mb-6 flex items-center gap-3 shadow-sm text-sm shrink-0">
+                <span className="text-lg">⚠️</span>
+                <div>
+                  <strong>Action Required (Deployment Check):</strong> The application is running in production but attempting to connect to a local backend API (<code>localhost:5002</code>). Please configure the environment variable <code>VITE_API_URL</code> on Vercel to point to your live Render backend API (e.g. <code>https://your-service.onrender.com/api/v1</code>).
+                </div>
+              </div>
+            )}
             <Outlet />
           </div>
         </main>

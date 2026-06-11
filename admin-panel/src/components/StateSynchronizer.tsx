@@ -48,7 +48,12 @@ export const StateSynchronizer = () => {
           }
         }
       } catch (error) {
-        console.error('[Sync] Error pulling state from backend:', error);
+        console.error(
+          `[Sync] Error pulling state from backend. If this is a production deploy on Vercel, ` +
+          `make sure you have configured the VITE_API_URL environment variable to point to your Render ` +
+          `backend (e.g., https://your-backend.onrender.com/api/v1). Current API URL: ${API_URL}`,
+          error
+        );
       } finally {
         setTimeout(() => {
           isSyncingRef.current = false;
@@ -103,7 +108,12 @@ export const StateSynchronizer = () => {
             console.log('[Sync] Database sync complete.');
           }
         } catch (error) {
-          console.error('[Sync] Error pushing state updates to database:', error);
+          console.error(
+            `[Sync] Error pushing state updates to database. If this is a production deploy on Vercel, ` +
+            `make sure you have configured the VITE_API_URL environment variable to point to your Render ` +
+            `backend (e.g., https://your-backend.onrender.com/api/v1). Current API URL: ${API_URL}`,
+            error
+          );
         }
       }, 1500); // 1.5-second debounce window
     });
