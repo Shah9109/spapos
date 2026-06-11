@@ -2,45 +2,17 @@ import React, { useState } from 'react';
 import { Megaphone, MessageSquare, Send, Plus, Pencil, Trash2, Mail, CheckSquare, Square, Play, ChevronRight } from 'lucide-react';
 import { useAppStore } from '../lib/store';
 
-interface MarketingTemplate {
-  id: string;
-  name: string;
-  message: string;
-}
-
-const DEFAULT_TEMPLATES: MarketingTemplate[] = [
-  {
-    id: 'tpl-1',
-    name: 'Upgrade to Yearly Promo',
-    message: 'Hello {{owner_name}},\n\nUpgrade your spa {{spa_name}} to our Yearly plan now to save 20% on your subscription and enjoy uninterrupted access to all advanced POS features!\n\nRegards,\nSpaPOS Support Team',
-  },
-  {
-    id: 'tpl-2',
-    name: 'Trial Ending Soon',
-    message: 'Hello {{owner_name}},\n\nYour 14-day free trial for {{spa_name}} is expiring soon. Please visit the Billing settings page to purchase a subscription and maintain access to SpaPOS.\n\nRegards,\nSpaPOS Team',
-  },
-  {
-    id: 'tpl-3',
-    name: 'Maintenance Warning',
-    message: 'Hello {{owner_name}},\n\nWe will be performing scheduled platform maintenance. The SpaPOS console for {{spa_name}} may be temporarily offline for a short period.\n\nRegards,\nSpaPOS Operations',
-  }
-];
-
 export const SuperAdminMarketing = () => {
   const spas = useAppStore((state) => state.spas);
   const users = useAppStore((state) => state.users);
   const plans = useAppStore((state) => state.plans);
 
   const [activeTab, setActiveTab] = useState<'SPAS' | 'TEMPLATES'>('SPAS');
-  const [templates, setTemplates] = useState<MarketingTemplate[]>(() => {
-    const saved = localStorage.getItem('spapos_sa_templates');
-    return saved ? JSON.parse(saved) : DEFAULT_TEMPLATES;
-  });
-
-  const saveTemplates = (newTemplates: MarketingTemplate[]) => {
-    setTemplates(newTemplates);
-    localStorage.setItem('spapos_sa_templates', JSON.stringify(newTemplates));
-  };
+  
+  const templates = useAppStore((state) => state.messageTemplates).filter(t => t.templateType === 'CUSTOM');
+  const createMessageTemplate = useAppStore((state) => state.createMessageTemplate);
+  const updateMessageTemplate = useAppStore((state) => state.updateMessageTemplate);
+  const deleteMessageTemplate = useAppStore((state) => state.deleteMessageTemplate);
 
   // Form states for template CRUD
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -89,16 +61,15 @@ export const SuperAdminMarketing = () => {
     setSelectedSpaIds(next);
   };
 
-  const handleEditTemplate = (template: MarketingTemplate) => {
+  const handleEditTemplate = (template: any) => {
     setEditingId(template.id);
-    setFormData({ name: template.name, message: template.message });
+    setFormData({ name: template.templateName, message: template.message });
     setIsModalOpen(true);
   };
 
   const handleDeleteTemplate = (id: string) => {
     if (confirm('Are you sure you want to delete this template?')) {
-      const updated = templates.filter(t => t.id !== id);
-      saveTemplates(updated);
+      deleteMessageTemplate(id);
       if (selectedTemplateId === id) setSelectedTemplateId('');
     }
   };
@@ -106,15 +77,16 @@ export const SuperAdminMarketing = () => {
   const handleSaveTemplate = (e: React.FormEvent) => {
     e.preventDefault();
     if (editingId) {
-      const updated = templates.map(t => t.id === editingId ? { ...t, name: formData.name, message: formData.message } : t);
-      saveTemplates(updated);
+      updateMessageTemplate(editingId, {
+        templateName: formData.name,
+        message: formData.message,
+      });
     } else {
-      const newTemplate = {
-        id: `tpl-${Date.now()}`,
-        name: formData.name,
-        message: formData.message
-      };
-      saveTemplates([...templates, newTemplate]);
+      createMessageTemplate({
+        templateName: formData.name,
+        templateType: 'CUSTOM',
+        message: formData.message,
+      });
     }
     setFormData({ name: '', message: '' });
     setEditingId(null);
@@ -332,7 +304,7 @@ export const SuperAdminMarketing = () => {
               >
                 <option value="">-- Choose Template --</option>
                 {templates.map(t => (
-                  <option key={t.id} value={t.id}>{t.name}</option>
+                  <option key={t.id} value={t.id}>{t.templateName}</option>
                 ))}
               </select>
             </div>
@@ -366,7 +338,7 @@ export const SuperAdminMarketing = () => {
               <div key={template.id} className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 flex flex-col justify-between min-h-[160px]">
                 <div>
                   <div className="flex justify-between items-start">
-                    <h3 className="font-bold text-gray-900 text-sm">{template.name}</h3>
+                    <h3 className="font-bold text-gray-900 text-sm">{template.templateName}</h3>
                     <div className="flex gap-1">
                       <button
                         onClick={() => handleEditTemplate(template)}

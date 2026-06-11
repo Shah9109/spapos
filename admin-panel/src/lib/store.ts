@@ -1005,6 +1005,24 @@ const initialState = {
       templateName: 'Membership Renewal',
       templateType: 'MEMBERSHIP_RENEWAL',
       message: 'Hello {{customer_name}},\n\nYour membership expires on {{expiry_date}}.\n\nRenew now and get special benefits.\n\nRegards,\n{{spa_name}}'
+    },
+    {
+      id: 'template-sa-yearly',
+      templateName: 'Upgrade to Yearly Promo',
+      templateType: 'CUSTOM',
+      message: 'Hello {{owner_name}},\n\nUpgrade your spa {{spa_name}} to our Yearly plan now to save 20% on your subscription and enjoy uninterrupted access to all advanced POS features!\n\nRegards,\nSpaPOS Support Team'
+    },
+    {
+      id: 'template-sa-trial',
+      templateName: 'Trial Ending Soon',
+      templateType: 'CUSTOM',
+      message: 'Hello {{owner_name}},\n\nYour 14-day free trial for {{spa_name}} is expiring soon. Please visit the Billing settings page to purchase a subscription and maintain access to SpaPOS.\n\nRegards,\nSpaPOS Team'
+    },
+    {
+      id: 'template-sa-maintenance',
+      templateName: 'Maintenance Warning',
+      templateType: 'CUSTOM',
+      message: 'Hello {{owner_name}},\n\nWe will be performing scheduled platform maintenance. The SpaPOS console for {{spa_name}} may be temporarily offline for a short period.\n\nRegards,\nSpaPOS Operations'
     }
   ] as MessageTemplate[],
   paymentMethods: [
