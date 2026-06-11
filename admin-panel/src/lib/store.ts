@@ -1830,34 +1830,16 @@ export const useAppStore = create<AppState>()(
     {
       name: 'spapos-store',
       partialize: (state) => {
-        const cloudInvoices = state.invoices.map((inv) => {
-          const isWalkIn = !inv.customerId || inv.customerName === 'Walk-in Customer';
-          if (isWalkIn) {
-            return {
-              ...inv,
-              items: [],
-            };
-          }
-          return inv;
-        });
+        // Only persist the active login session to keep the user logged in on page refresh
         return {
-          ...state,
-          invoices: cloudInvoices,
+          session: state.session,
         } as any;
       },
       merge: (persistedState, currentState) => {
         const persisted = (persistedState ?? {}) as Partial<AppState>;
         return {
           ...currentState,
-          ...persisted,
-          messageTemplates: persisted.messageTemplates && persisted.messageTemplates.length > 0
-            ? persisted.messageTemplates
-            : currentState.messageTemplates,
           session: { ...currentState.session, ...persisted.session },
-          platformSettings: {
-            ...currentState.platformSettings,
-            ...(persisted.platformSettings ?? {}),
-          },
         };
       },
     },
