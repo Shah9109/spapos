@@ -1,0 +1,664 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+// ----------------------------------------
+// MULTI-TENANT ARCHITECTURE (Super Admin)
+// ----------------------------------------
+
+enum PlanType {
+  BASIC
+  STANDARD
+  PREMIUM
+  ENTERPRISE
+}
+
+enum SubscriptionStatus {
+  TRIAL
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  EXPIRED
+}
+
+enum SpaStatus {
+  ACTIVE
+  SUSPENDED
+  BLOCKED
+  PENDING
+}
+
+enum UserRole {
+  SUPER_ADMIN
+  SPA_OWNER
+  MANAGER
+  RECEPTIONIST
+  THERAPIST
+  ACCOUNTANT
+}
+
+model Spa {
+  id        String    @id @default(auto()) @map("_id") @db.ObjectId
+  name      String
+  subdomain String?   @unique
+  email     String
+  phone     String?
+  address   String?
+  status    SpaStatus @default(PENDING)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  users              User[]
+  subscription       Subscription?
+  invoices           Invoice[]
+  auditLogs          AuditLog[]
+  licenses           License[]
+  customers          Customer[]
+  memberships        CustomerMembership[]
+  appointments       Appointment[]
+  products           Product[]
+  productCategories  ProductCategory[]
+  services           Service[]
+  serviceCategories  ServiceCategory[]
+  comboPackages      ComboPackage[]
+  spaInvoices        SpaInvoice[]
+  suppliers          Supplier[]
+  purchaseOrders     PurchaseOrder[]
+  stockAdjustments   StockAdjustment[]
+  expenseCategories  ExpenseCategory[]
+  expenses           Expense[]
+  attendances        Attendance[]
+  payrolls           Payroll[]
+  leaveRequests      LeaveRequest[]
+  branches           Branch[]
+  marketingCampaigns MarketingCampaign[]
+
+  @@map("spas")
+}
+
+model Plan {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  name         String
+  type         PlanType
+  monthlyPrice Float
+  yearlyPrice  Float
+  features     Json // e.g., maxUsers, maxBranches, etc.
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  subscriptions Subscription[]
+
+  @@map("plans")
+}
+
+model Subscription {
+  id          String             @id @default(auto()) @map("_id") @db.ObjectId
+  spaId       String             @unique @db.ObjectId
+  planId      String             @db.ObjectId
+  status      SubscriptionStatus @default(TRIAL)
+  startDate   DateTime
+  endDate     DateTime
+  trialEndsAt DateTime?
+  autoRenew   Boolean            @default(true)
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  spa      Spa       @relation(fields: [spaId], references: [id])
+  plan     Plan      @relation(fields: [planId], references: [id])
+  payments Payment[]
+
+  @@map("subscriptions")
+}
+
+model User {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  email        String   @unique
+  passwordHash String
+  firstName    String
+  lastName     String
+  phone        String?
+  role         UserRole
+  isActive     Boolean  @default(true)
+  mfaEnabled   Boolean  @default(false)
+  spaId        String?  @db.ObjectId // Null for SUPER_ADMIN
+  branchId     String?  @db.ObjectId
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  spa             Spa?             @relation(fields: [spaId], references: [id])
+  branch          Branch?          @relation(fields: [branchId], references: [id])
+  userPermissions UserPermission[]
+  auditLogs       AuditLog[]
+  appointments    Appointment[]
+  attendances     Attendance[]
+  payrolls        Payroll[]
+  leaveRequests   LeaveRequest[]
+  loginHistories  LoginHistory[]
+
+  @@map("users")
+}
+
+model Permission {
+  id          String  @id @default(auto()) @map("_id") @db.ObjectId
+  code        String  @unique // e.g., "CREATE_SPA", "VIEW_REPORTS"
+  description String?
+  module      String // e.g., "BILLING", "STAFF"
+
+  userPermissions UserPermission[]
+
+  @@map("permissions")
+}
+
+model UserPermission {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId       String   @db.ObjectId
+  permissionId String   @db.ObjectId
+  assignedAt   DateTime @default(now())
+
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, permissionId])
+  @@map("user_permissions")
+}
+
+model Invoice {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  spaId         String   @db.ObjectId
+  invoiceNumber String   @unique
+  amount        Float
+  taxAmount     Float
+  totalAmount   Float
+  dueDate       DateTime
+  status        String // PENDING, PAID, VOID
+  pdfUrl        String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  spa      Spa       @relation(fields: [spaId], references: [id])
+  payments Payment[]
+
+  @@map("invoices")
+}
+
+model Payment {
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  subscriptionId String   @db.ObjectId
+  invoiceId      String?  @db.ObjectId
+  amount         Float
+  currency       String   @default("USD")
+  paymentMethod  String // CARD, UPI, WIRE
+  transactionId  String?  @unique @db.ObjectId
+  status         String // PENDING, COMPLETED, FAILED
+  paymentDate    DateTime @default(now())
+
+  subscription Subscription @relation(fields: [subscriptionId], references: [id])
+  invoice      Invoice?     @relation(fields: [invoiceId], references: [id])
+
+  @@map("payments")
+}
+
+model AuditLog {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  spaId      String?  @db.ObjectId // Can be null if super admin action
+  userId     String   @db.ObjectId
+  action     String // CREATE_SPA, UPDATE_PLAN, etc.
+  entityType String // User, Spa, Subscription
+  entityId   String?  @db.ObjectId
+  details    Json? // Old/New values
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  spa  Spa? @relation(fields: [spaId], references: [id])
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("audit_logs")
+}
+
+model License {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  licenseKey  String    @unique
+  spaId       String    @db.ObjectId
+  deviceId    String?   @db.ObjectId
+  deviceName  String?
+  isActive    Boolean   @default(true)
+  activatedAt DateTime?
+  expiresAt   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  spa Spa @relation(fields: [spaId], references: [id])
+
+  @@map("licenses")
+}
+
+// ----------------------------------------
+// SPA OWNER / TENANT ARCHITECTURE (Phase 3)
+// ----------------------------------------
+
+model Customer {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  spaId         String   @db.ObjectId
+  firstName     String
+  lastName      String
+  email         String?
+  phone         String
+  loyaltyPoints Int      @default(0)
+  tags          String[] // Array of tags e.g., ["VIP", "Frequent"]
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  spa          Spa                  @relation(fields: [spaId], references: [id])
+  appointments Appointment[]
+  memberships  CustomerMembership[]
+  spaInvoices  SpaInvoice[]
+
+  @@map("customers")
+}
+
+model CustomerMembership {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  customerId String   @db.ObjectId
+  spaId      String   @db.ObjectId
+  planName   String
+  status     String // ACTIVE, EXPIRED, FROZEN
+  startDate  DateTime
+  endDate    DateTime
+  createdAt  DateTime @default(now())
+
+  customer Customer @relation(fields: [customerId], references: [id])
+  spa      Spa      @relation(fields: [spaId], references: [id])
+
+  @@map("customer_memberships")
+}
+
+model Appointment {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  spaId       String   @db.ObjectId
+  branchId    String?  @db.ObjectId
+  customerId  String   @db.ObjectId
+  therapistId String   @db.ObjectId
+  serviceId   String?  @db.ObjectId // Nullable for now, will link to services
+  startTime   DateTime
+  endTime     DateTime
+  status      String // SCHEDULED, COMPLETED, CANCELLED, NO_SHOW
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  spa       Spa      @relation(fields: [spaId], references: [id])
+  branch    Branch?  @relation(fields: [branchId], references: [id])
+  customer  Customer @relation(fields: [customerId], references: [id])
+  therapist User     @relation(fields: [therapistId], references: [id])
+  service   Service? @relation(fields: [serviceId], references: [id])
+
+  @@map("appointments")
+}
+
+// ----------------------------------------
+// POS & BILLING ARCHITECTURE (Phase 4)
+// ----------------------------------------
+
+model ProductCategory {
+  id        String    @id @default(auto()) @map("_id") @db.ObjectId
+  spaId     String    @db.ObjectId
+  name      String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  products  Product[]
+
+  spa Spa @relation(fields: [spaId], references: [id])
+
+  @@map("product_categories")
+}
+
+model Product {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  spaId         String   @db.ObjectId
+  categoryId    String?  @db.ObjectId
+  name          String
+  sku           String?
+  barcode       String?  @unique
+  description   String?
+  price         Float
+  stockQuantity Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  spa              Spa                 @relation(fields: [spaId], references: [id])
+  category         ProductCategory?    @relation(fields: [categoryId], references: [id])
+  invoiceItems     SpaInvoiceItem[]
+  purchaseItems    PurchaseOrderItem[]
+  stockAdjustments StockAdjustment[]
+
+  @@map("products")
+}
+
+model ServiceCategory {
+  id        String    @id @default(auto()) @map("_id") @db.ObjectId
+  spaId     String    @db.ObjectId
+  name      String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  services  Service[]
+
+  spa Spa @relation(fields: [spaId], references: [id])
+
+  @@map("service_categories")
+}
+
+model Service {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  spaId      String   @db.ObjectId
+  categoryId String?  @db.ObjectId
+  name       String
+  duration   Int // in minutes
+  price      Float
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  spa          Spa              @relation(fields: [spaId], references: [id])
+  category     ServiceCategory? @relation(fields: [categoryId], references: [id])
+  appointments Appointment[]
+  invoiceItems SpaInvoiceItem[]
+
+  @@map("services")
+}
+
+model ComboPackage {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  spaId     String   @db.ObjectId
+  name      String
+  price     Float
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  spa          Spa              @relation(fields: [spaId], references: [id])
+  invoiceItems SpaInvoiceItem[]
+
+  @@map("combo_packages")
+}
+
+model SpaInvoice {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  spaId         String   @db.ObjectId
+  branchId      String?  @db.ObjectId
+  customerId    String?  @db.ObjectId
+  invoiceNumber String // Unique per spa
+  subtotal      Float
+  discount      Float
+  taxAmount     Float
+  totalAmount   Float
+  status        String // PAID, PENDING, REFUNDED
+  paymentMethod String? // CASH, UPI, CARD, WALLET, SPLIT
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  spa      Spa              @relation(fields: [spaId], references: [id])
+  branch   Branch?          @relation(fields: [branchId], references: [id])
+  customer Customer?        @relation(fields: [customerId], references: [id])
+  items    SpaInvoiceItem[]
+  payments SpaPayment[]
+
+  @@unique([spaId, invoiceNumber])
+  @@map("spa_invoices")
+}
+
+model SpaInvoiceItem {
+  id           String  @id @default(auto()) @map("_id") @db.ObjectId
+  spaInvoiceId String  @db.ObjectId
+  itemType     String // PRODUCT, SERVICE, COMBO
+  productId    String? @db.ObjectId
+  serviceId    String? @db.ObjectId
+  comboId      String? @db.ObjectId
+  quantity     Int     @default(1)
+  unitPrice    Float
+  totalPrice   Float
+
+  invoice SpaInvoice    @relation(fields: [spaInvoiceId], references: [id], onDelete: Cascade)
+  product Product?      @relation(fields: [productId], references: [id])
+  service Service?      @relation(fields: [serviceId], references: [id])
+  combo   ComboPackage? @relation(fields: [comboId], references: [id])
+
+  @@map("spa_invoice_items")
+}
+
+model SpaPayment {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  spaInvoiceId  String   @db.ObjectId
+  amount        Float
+  method        String // CASH, UPI, CARD, WALLET
+  status        String // SUCCESS, FAILED, REFUNDED
+  transactionId String?  @db.ObjectId
+  createdAt     DateTime @default(now())
+
+  invoice SpaInvoice @relation(fields: [spaInvoiceId], references: [id], onDelete: Cascade)
+
+  @@map("spa_payments")
+}
+
+// ----------------------------------------
+// INVENTORY, FINANCE & HR (Phase 5)
+// ----------------------------------------
+
+// -- INVENTORY --
+
+model Supplier {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  spaId         String   @db.ObjectId
+  name          String
+  contactPerson String?
+  email         String?
+  phone         String?
+  address       String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  spa       Spa             @relation(fields: [spaId], references: [id])
+  purchases PurchaseOrder[]
+
+  @@map("suppliers")
+}
+
+model PurchaseOrder {
+  id           String    @id @default(auto()) @map("_id") @db.ObjectId
+  spaId        String    @db.ObjectId
+  supplierId   String    @db.ObjectId
+  orderNumber  String    @unique
+  status       String // PENDING, RECEIVED, CANCELLED
+  totalAmount  Float
+  orderDate    DateTime  @default(now())
+  receivedDate DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  spa      Spa                 @relation(fields: [spaId], references: [id])
+  supplier Supplier            @relation(fields: [supplierId], references: [id])
+  items    PurchaseOrderItem[]
+
+  @@map("purchase_orders")
+}
+
+model PurchaseOrderItem {
+  id              String @id @default(auto()) @map("_id") @db.ObjectId
+  purchaseOrderId String @db.ObjectId
+  productId       String @db.ObjectId
+  quantity        Int
+  unitPrice       Float
+  totalPrice      Float
+
+  purchaseOrder PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+  product       Product       @relation(fields: [productId], references: [id])
+
+  @@map("purchase_order_items")
+}
+
+model StockAdjustment {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  spaId     String   @db.ObjectId
+  productId String   @db.ObjectId
+  type      String // ADD, REMOVE
+  quantity  Int
+  reason    String?
+  date      DateTime @default(now())
+  createdAt DateTime @default(now())
+
+  spa     Spa     @relation(fields: [spaId], references: [id])
+  product Product @relation(fields: [productId], references: [id])
+
+  @@map("stock_adjustments")
+}
+
+// -- FINANCE --
+
+model ExpenseCategory {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  spaId     String   @db.ObjectId
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  spa      Spa       @relation(fields: [spaId], references: [id])
+  expenses Expense[]
+
+  @@map("expense_categories")
+}
+
+model Expense {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  spaId         String   @db.ObjectId
+  categoryId    String   @db.ObjectId
+  amount        Float
+  description   String?
+  expenseDate   DateTime @default(now())
+  paymentMethod String // CASH, CARD, UPI, BANK_TRANSFER
+  receiptUrl    String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  spa      Spa             @relation(fields: [spaId], references: [id])
+  category ExpenseCategory @relation(fields: [categoryId], references: [id])
+
+  @@map("expenses")
+}
+
+// -- HR --
+
+model Attendance {
+  id        String    @id @default(auto()) @map("_id") @db.ObjectId
+  spaId     String    @db.ObjectId
+  userId    String    @db.ObjectId
+  date      DateTime
+  checkIn   DateTime?
+  checkOut  DateTime?
+  status    String // PRESENT, ABSENT, HALF_DAY, ON_LEAVE
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  spa  Spa  @relation(fields: [spaId], references: [id])
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([userId, date])
+  @@map("attendance")
+}
+
+model Payroll {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  spaId       String    @db.ObjectId
+  userId      String    @db.ObjectId
+  month       Int // 1-12
+  year        Int
+  basicSalary Float
+  commissions Float     @default(0)
+  incentives  Float     @default(0)
+  deductions  Float     @default(0)
+  netSalary   Float
+  status      String // PENDING, PAID
+  paymentDate DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  spa  Spa  @relation(fields: [spaId], references: [id])
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([userId, month, year])
+  @@map("payrolls")
+}
+
+model LeaveRequest {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  spaId     String   @db.ObjectId
+  userId    String   @db.ObjectId
+  startDate DateTime
+  endDate   DateTime
+  reason    String?
+  status    String // PENDING, APPROVED, REJECTED
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  spa  Spa  @relation(fields: [spaId], references: [id])
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("leave_requests")
+}
+
+// ----------------------------------------
+// ENTERPRISE & SCALING (Phase 6)
+// ----------------------------------------
+
+model Branch {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  spaId        String   @db.ObjectId
+  name         String
+  location     String?
+  contactEmail String?
+  contactPhone String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  spa          Spa           @relation(fields: [spaId], references: [id], onDelete: Cascade)
+  users        User[]
+  appointments Appointment[]
+  spaInvoices  SpaInvoice[]
+
+  @@map("branches")
+}
+
+model MarketingCampaign {
+  id             String    @id @default(auto()) @map("_id") @db.ObjectId
+  spaId          String    @db.ObjectId
+  name           String
+  type           String // EMAIL, WHATSAPP, SMS
+  status         String // DRAFT, SCHEDULED, ACTIVE, COMPLETED
+  targetAudience String // ALL, VIP, INACTIVE
+  content        String
+  scheduledAt    DateTime?
+  sentCount      Int       @default(0)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  spa Spa @relation(fields: [spaId], references: [id], onDelete: Cascade)
+
+  @@map("marketing_campaigns")
+}
+
+model LoginHistory {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId     String   @db.ObjectId
+  ipAddress  String
+  userAgent  String?
+  deviceType String?
+  status     String // SUCCESS, FAILED
+  loginAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("login_history")
+}

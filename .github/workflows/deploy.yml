@@ -1,0 +1,50 @@
+name: SpaPOS CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, staging ]
+  pull_request:
+    branches: [ main, staging ]
+
+jobs:
+  build-and-test-backend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./backend
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: './backend/package-lock.json'
+      - run: npm ci
+      - run: npx prisma generate
+      - run: npm run build
+
+  build-and-test-frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./admin-panel
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: './admin-panel/package-lock.json'
+      - run: npm ci
+      - run: npm run build
+
+  docker-build:
+    needs: [build-and-test-backend, build-and-test-frontend]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build Backend Image
+        run: docker build -t spapos-backend ./backend
+      - name: Build Frontend Image
+        run: docker build -t spapos-frontend ./admin-panel

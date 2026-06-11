@@ -1,0 +1,234 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-[#f2f9ff] text-[#0b0b0b];
+  }
+}
+
+:root {
+  /* Classic Default Warm Red/Black Theme */
+  --color-primary: #e63946;
+  --color-primary-50: #fdf3f4;
+  --color-primary-100: #fbe4e6;
+  --color-primary-200: #f7c4c8;
+  --color-primary-300: #f19a9f;
+  --color-primary-400: #e96068;
+  --color-primary-500: #e63946;
+  --color-primary-600: #d02633;
+  --color-primary-700: #af1c25;
+  --color-primary-800: #921a22;
+  --color-primary-900: #7a1b21;
+  --color-primary-950: #430a0f;
+  --color-secondary: #0b0b0b;
+}
+
+/* Sunset Terracotta */
+.theme-terracotta {
+  --color-primary: #e2583e;
+  --color-primary-50: #fdf4f2;
+  --color-primary-100: #fbe6e1;
+  --color-primary-200: #f6c8bf;
+  --color-primary-300: #f0a293;
+  --color-primary-400: #e7735f;
+  --color-primary-500: #e2583e;
+  --color-primary-600: #cb3d23;
+  --color-primary-700: #aa311b;
+  --color-primary-800: #8d2a19;
+  --color-primary-900: #752619;
+  --color-primary-950: #40100a;
+  --color-secondary: #2f1b17;
+}
+
+/* Golden Amber */
+.theme-amber {
+  --color-primary: #e09f3e;
+  --color-primary-50: #fefaf3;
+  --color-primary-100: #fcf1e2;
+  --color-primary-200: #f8dfbe;
+  --color-primary-300: #f3c58f;
+  --color-primary-400: #ebaa5e;
+  --color-primary-500: #e09f3e;
+  --color-primary-600: #ca8430;
+  --color-primary-700: #a86526;
+  --color-primary-800: #8c5223;
+  --color-primary-900: #74431f;
+  --color-primary-950: #40210e;
+  --color-secondary: #3e2723;
+}
+
+/* Peach Clay */
+.theme-peach {
+  --color-primary: #f28482;
+  --color-primary-50: #fef6f6;
+  --color-primary-100: #fdeaea;
+  --color-primary-200: #fcd1d1;
+  --color-primary-300: #f9abab;
+  --color-primary-400: #f68d8b;
+  --color-primary-500: #f28482;
+  --color-primary-600: #da615f;
+  --color-primary-700: #b74645;
+  --color-primary-800: #983837;
+  --color-primary-900: #7e3231;
+  --color-primary-950: #451717;
+  --color-secondary: #2d201e;
+}
+
+/* Warm Sandalwood */
+.theme-sandalwood {
+  --color-primary: #b07d62;
+  --color-primary-50: #faf6f4;
+  --color-primary-100: #f4eae4;
+  --color-primary-200: #edd3c5;
+  --color-primary-300: #e1b49e;
+  --color-primary-400: #d09477;
+  --color-primary-500: #b07d62;
+  --color-primary-600: #9c664c;
+  --color-primary-700: #82523d;
+  --color-primary-800: #6c4433;
+  --color-primary-900: #59392c;
+  --color-primary-950: #331f17;
+  --color-secondary: #3d261c;
+}
+
+/* Copper Marigold */
+.theme-copper {
+  --color-primary: #e07a5f;
+  --color-primary-50: #fdf5f3;
+  --color-primary-100: #fbebe6;
+  --color-primary-200: #f7d2ca;
+  --color-primary-300: #f0b2a3;
+  --color-primary-400: #e78d78;
+  --color-primary-500: #e07a5f;
+  --color-primary-600: #cb5d43;
+  --color-primary-700: #aa4c35;
+  --color-primary-800: #8c3f2d;
+  --color-primary-900: #743729;
+  --color-primary-950: #3f1b13;
+  --color-secondary: #1d1a21;
+}
+
+/* --- Claymorphism Theme Styles --- */
+.theme-clay {
+  --clay-bg: #eef4fc;
+  --clay-card-bg: rgba(255, 255, 255, 0.82);
+  --clay-card-shadow: 10px 10px 24px rgba(166, 180, 200, 0.35), 
+                       -10px -10px 24px rgba(255, 255, 255, 0.85),
+                       inset 4px 4px 8px rgba(255, 255, 255, 0.9), 
+                       inset -4px -4px 8px rgba(166, 180, 200, 0.2);
+  --clay-input-shadow: inset 3px 3px 6px rgba(166, 180, 200, 0.3), 
+                       inset -3px -3px 6px rgba(255, 255, 255, 0.9);
+  --clay-button-shadow: 4px 4px 10px rgba(166, 180, 200, 0.3),
+                        inset 3px 3px 6px rgba(255, 255, 255, 0.4),
+                        inset -3px -3px 6px rgba(0, 0, 0, 0.15);
+  
+  background-color: var(--clay-bg) !important;
+}
+
+/* Background layout override */
+.theme-clay.min-h-screen {
+  background-color: var(--clay-bg) !important;
+}
+
+/* Card & Panel Overrides */
+.theme-clay .bg-white,
+.theme-clay .bg-gray-50\/50,
+.theme-clay .bg-gray-50 {
+  background: var(--clay-card-bg) !important;
+  border-radius: 24px !important;
+  border: none !important;
+  box-shadow: var(--clay-card-shadow) !important;
+  backdrop-filter: blur(12px);
+}
+
+/* Navigation Sidebar Override */
+.theme-clay aside {
+  background: rgba(240, 246, 253, 0.9) !important;
+  border-right: none !important;
+  box-shadow: 8px 0px 24px rgba(166, 180, 200, 0.25),
+              inset 4px 4px 8px rgba(255, 255, 255, 0.9), 
+              inset -4px -4px 8px rgba(166, 180, 200, 0.1) !important;
+  backdrop-filter: blur(12px);
+}
+
+/* Active sidebar items */
+.theme-clay .bg-primary-50 {
+  background: #e1ebf7 !important;
+  border-radius: 16px !important;
+  box-shadow: var(--clay-input-shadow) !important;
+}
+
+/* Main header */
+.theme-clay header.bg-secondary {
+  background: linear-gradient(135deg, #1e293b, #0f172a) !important;
+  border-bottom-left-radius: 24px !important;
+  border-bottom-right-radius: 24px !important;
+  box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.15) !important;
+  margin: 0 16px;
+  margin-top: 8px;
+}
+
+/* Form Inputs, Selects and Textareas */
+.theme-clay input[type="text"],
+.theme-clay input[type="email"],
+.theme-clay input[type="number"],
+.theme-clay input[type="password"],
+.theme-clay input[type="date"],
+.theme-clay input[type="time"],
+.theme-clay select,
+.theme-clay textarea {
+  background-color: #f3f7fc !important;
+  border: none !important;
+  border-radius: 16px !important;
+  box-shadow: var(--clay-input-shadow) !important;
+  padding: 10px 16px !important;
+  outline: none !important;
+  transition: all 0.2s ease;
+}
+
+.theme-clay input:focus,
+.theme-clay select:focus,
+.theme-clay textarea:focus {
+  box-shadow: inset 3px 3px 6px rgba(166, 180, 200, 0.4), 
+              inset -3px -3px 6px rgba(255, 255, 255, 1),
+              0 0 0 2px rgba(59, 130, 246, 0.4) !important;
+}
+
+/* Buttons */
+.theme-clay button.bg-primary-600,
+.theme-clay button.bg-primary,
+.theme-clay button.bg-blue-600,
+.theme-clay button.bg-indigo-600,
+.theme-clay button[type="submit"] {
+  border-radius: 16px !important;
+  border: none !important;
+  box-shadow: var(--clay-button-shadow) !important;
+  font-weight: 600 !important;
+  transition: transform 0.1s ease, box-shadow 0.2s ease;
+}
+
+.theme-clay button.bg-primary-600:hover,
+.theme-clay button.bg-primary:hover,
+.theme-clay button.bg-blue-600:hover,
+.theme-clay button.bg-indigo-600:hover,
+.theme-clay button[type="submit"]:hover {
+  transform: translateY(-1px);
+  box-shadow: 6px 6px 14px rgba(166, 180, 200, 0.45),
+              inset 3px 3px 6px rgba(255, 255, 255, 0.5),
+              inset -3px -3px 6px rgba(0, 0, 0, 0.15) !important;
+}
+
+.theme-clay button.bg-primary-600:active,
+.theme-clay button.bg-primary:active,
+.theme-clay button[type="submit"]:active {
+  transform: translateY(1px);
+  box-shadow: inset 3px 3px 6px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* Checkboxes & toggle labels */
+.theme-clay .border-gray-200 {
+  border-color: rgba(226, 232, 240, 0.8) !important;
+}
+
